@@ -1,0 +1,7 @@
+monitor:
+  host: localhost
+  port: 5000
+  interval: 2
+docker:
+  remotely: true
+  url: tcp://127.0.0.1:2375

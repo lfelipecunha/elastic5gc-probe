@@ -4,6 +4,8 @@ import time
 import http.client
 import urllib.parse
 from threading import Thread
+import argparse
+import yaml
 
 class MonitorHandler:
     def __init__(self, host, port):
@@ -36,9 +38,13 @@ class MonitoringThread(Thread):
                 print(amf_id, 'percentage: ' + str(percentage), flush=True)
                 self.monitor.save(amf_id, percentage)
             last_stats = stats
+
             end_time = int(time.time())
             execution_time = end_time-start_time
-            time.sleep(int(os.environ['MONITOR_INTERVAL']) - execution_time)
+            sleep_time = int(os.environ['MONITOR_INTERVAL']) - execution_time
+
+            if sleep_time > 0:
+                time.sleep(sleep_time)
 
     def calculate_cpu_percentage(self, previous_stats, current_stats):
         cpuPercent = 0.0
@@ -52,13 +58,11 @@ class MonitoringThread(Thread):
 
 
 class DockerCommunicationHandler:
-    def __init__ (self):
-        docker_remotely = False
-        if 'DOCKER_REMOTELY' in os.environ:
-            docker_remotely = bool(int(os.environ['DOCKER_REMOTELY']))
+    def __init__ (self, docker_config):
+        docker_remotely = docker_config['remotely']
 
         if docker_remotely:
-            self.client = docker.DockerClient(base_url=os.environ['DOCKER_URL'])
+            self.client = docker.DockerClient(docker_config['url'])
         else:
             self.client = docker.from_env()
 
@@ -67,10 +71,17 @@ class DockerCommunicationHandler:
         return self.client.containers.list(filters=container_filter)
 
 class Probe:
-    def __init__(self):
+    def __init__(self, config):
         self.containers_ids = []
-        self.docker_handler = DockerCommunicationHandler()
-        self.monitor = MonitorHandler(os.environ['MONITOR_HOST'], os.environ['MONITOR_PORT'])
+
+        docker_config = config.get('docker', {'remotely': False})
+        self.docker_handler = DockerCommunicationHandler(docker_config)
+
+        monitor_config = config.get('monitor', {'host': 'localhost', 'port': 5000, 'interval': 2})
+
+        self.monitor = MonitorHandler(monitor_config['host'], monitor_config['port'])
+
+        self.monitor_interval = monitor_config['interval']
 
     def run(self):
         while (True) :
@@ -83,9 +94,15 @@ class Probe:
                     self.containers_ids.append(container.id)
                     thread = MonitoringThread(self.monitor, container)
                     thread.start()
-            time.sleep(int(os.environ['MONITOR_INTERVAL']))
+            time.sleep(self.monitor_interval)
 
-if __name__ == "__main__":
-    probe = Probe()
+if __name__ == "__main__":    
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--config', help="Configuration File")
+    args = parser.parse_args()
+    yml_file = open(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', args.config)))
+    config = yaml.load(yml_file, Loader=yaml.CLoader)
+
+    probe = Probe(config)
     probe.run()
 

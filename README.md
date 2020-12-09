@@ -7,33 +7,34 @@ This is a probe to collect cpu usage of AMF services available in a specific hos
 * Elastic5GC Monitor - [docs](#) @TODO
 * Python 3.5 or superior
 
-# Env Vars
-|Variable|Type|Description|
-|-|-|-|
-|DOCKER_REMOTELY| 0 or 1 |0 - Uses docker socket, 1 - Uses API. Default: 0|
-|DOCKER_HOST| string | Host of docker API. Required if DOCKER_REMOTELY equals to 1. Example: tcp://127.0.0.1:2375|
-|MONITOR_HOST| string | Host of Elastic5GC Monitor. Required. Example: 192.168.1.1|
-|MONITOR_PORT| int |Port of Elastic5GC Monitor. Required. Example: 5000|
-|MONITOR_INTERVAL| int | Interval in seconds to collect data of each AMF service. Because of docker limitations minimal value is 2 seconds.  Example: 10|
+# Config File
 
+```yml
+monitor:
+  host: localhost # Host of elastic monitor
+  port: 5000 # Port of elastic monitor
+  interval: 2 # Interval in seconds between each monitoring
+docker:
+  remotely: true # Flag to identify if docker is same machine (false) or if it is in another one (true).
+  url: tcp://127.0.0.1:2375 # In case of remotely true, specified full url to docker API.
+```
 
 ## Running bare metal
 
 **Install docker python sdk**
 
-``sudo pip install docker``
+``sudo pip install -r requirements.txt``
 
 **Running**
 
-``sudo MONITOR_HOST=localhost MONITOR_PORT=8080 MONITOR_INTERVAL=10 python3.6 src/probe.py``
+``sudo src/probe.py --config ../config/probe.yml``
 
 ### Running on docker
 To run in a container or remotely you must enable Docker API to accept external requests. You can see how to enable it [here!](https://docs.docker.com/engine/reference/commandline/dockerd/)
 
-**Create environment file**
+**Config file**
 
-``cd docker && cp environment.sample enviroment``
->Change configs to match to your setup.
+Change configs located at ``config/probe.yml`` to match to your setup 
 
 **Running**
 

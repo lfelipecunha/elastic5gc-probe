@@ -1,11 +1,8 @@
 version: "3.5"
 services:
     probe:
-        build: docker
-        env_file: docker/environment
+        build: .
         volumes:
-            - ./src:/probe
-        command: python /probe/probe.py
+            - ./config/probe.yml:/probe/config/probe.yml
+        command: python /probe/probe.py --config config/probe.yml
         network_mode: host
-        labels:
-            - amf=1111
