@@ -97,7 +97,7 @@ class Probe:
             time.sleep(self.monitor_interval)
 
 if __name__ == "__main__":    
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='Elastic5GC Probe')
     parser.add_argument('--config', help="Configuration File")
     args = parser.parse_args()
     yml_file = open(os.path.abspath(os.path.join(os.path.abspath(__file__), '..', args.config)))
