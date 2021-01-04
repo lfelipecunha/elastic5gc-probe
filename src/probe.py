@@ -21,9 +21,10 @@ class MonitorHandler:
 
 
 class MonitoringThread(Thread):
-    def __init__ (self, monitor:MonitorHandler, container):
+    def __init__ (self, monitor:MonitorHandler, container, monitor_interval):
         print('New Thread for AMF', container.labels['amf'], flush=True)
         Thread.__init__(self)
+        self.monitor_interval = monitor_interval
         self.container = container
         self.monitor = monitor
 
@@ -41,7 +42,7 @@ class MonitoringThread(Thread):
 
             end_time = int(time.time())
             execution_time = end_time-start_time
-            sleep_time = int(os.environ['MONITOR_INTERVAL']) - execution_time
+            sleep_time = self.monitor_interval - execution_time
 
             if sleep_time > 0:
                 time.sleep(sleep_time)
@@ -92,7 +93,7 @@ class Probe:
                 if container.id not in self.containers_ids:
                     print('New container added', container.id, container.labels['amf'], flush=True)
                     self.containers_ids.append(container.id)
-                    thread = MonitoringThread(self.monitor, container)
+                    thread = MonitoringThread(self.monitor, container, self.monitor_interval)
                     thread.start()
             time.sleep(self.monitor_interval)
 
